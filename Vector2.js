@@ -2,8 +2,8 @@ const canvas = document.getElementById('canvas');
 
 const app = new PIXI.Application({
     view: canvas,
-    width: window.innerWidth,
-    height: window.innerHeight
+    width: 1000,
+    height: 1000
 });
 
 const { stage, view, ticker, renderer } = app;

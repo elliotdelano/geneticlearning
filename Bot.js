@@ -1,6 +1,7 @@
 class Food {
     constructor(position) {
         this.position = position
+        this.display()
     }
     display() {
         this.graphic = new PIXI.Graphics()
@@ -13,9 +14,9 @@ class Food {
         this.bounds = new Polygon(this.position.copy(), [new Vector2(-10, -10), new Vector2(10, -10), new Vector2(10, 10), new Vector2(-10, 10)], 20, 20)
     }
     delete() {
-        for (let i = 0; i < projectiles.length; i++) {
-            if (projectiles[i] == this) {
-                projectiles.splice(i, 1)
+        for (let i = 0; i < Sim.food.length; i++) {
+            if (Sim.food[i] == this) {
+                Sim.food.splice(i, 1)
                 break
             }
         }
@@ -32,7 +33,7 @@ class Bot {
     viewrange = 0
 
     food = 1000
-    static maxFood = 3000
+    static maxFood = 2000
 
     constructor(DNA, x, y) {
         this.position.set(x, y)
@@ -40,11 +41,11 @@ class Bot {
         this.display()
         this.setup()
     }
-    
+
     display() {
         this.graphic = new PIXI.Graphics()
         this.graphic.beginFill(0xff0000)
-        this.graphic.drawPolygon(new PIXI.Point(0, 4), new PIXI.Point(8, 0), new PIXI.Point(0, -4))
+        this.graphic.drawPolygon(new PIXI.Point(0, 12), new PIXI.Point(24, 0), new PIXI.Point(0, -12))
         this.graphic.position.set(this.position.x - this.width / 2, this.position.y - this.height / 2)
         viewport.addChild(this.graphic)
     }
@@ -52,6 +53,8 @@ class Bot {
         this.maxSpeed = this.DNA.genes[0]
         this.maxForce = this.DNA.genes[1]
         this.viewrange = this.DNA.genes[2]
+
+        this.bounds = new Polygon(this.position.copy(), [new Vector2(0, 12), new Vector2(24, 0), new Vector2(0, -12)], 12, 12);
     }
     wonder() {
         let dir = this.velocity.copy().normalize()
@@ -75,9 +78,9 @@ class Bot {
     }
     seek(target) {
         let desired = new Vector2(target.x - this.position.x, target.y - this.position.y)
-                        .setMag(this.maxSpeed)
-                        .sub(this.velocity)
-                        .limit(this.maxForce)
+            .setMag(this.maxSpeed)
+            .sub(this.velocity)
+            .limit(this.maxForce)
         //desired.setMag(this.maxSpeed)
         //desired.sub(this.velocity)
         //desired.limit(this.maxForce)
@@ -87,17 +90,20 @@ class Bot {
         this.acceleration.add(force)
     }
     checkState() {
-        if(this.food > Bot.maxFood) {
+        if (this.food > Bot.maxFood) {
             this.reproduce()
         }
-        if(this.food <= 0) {
+        if (this.food <= 0) {
             this.destroy()
         }
     }
+    eat() {
+        this.food += 250
+    }
     reproduce() {
         let children = DNA.mitosis(this.DNA)
-        let c1 = new Bot(children[0], this.position.x, this.position.y)
-        let c2 = new Bot(children[0], this.position.x, this.position.y)
+        let c1 = new Bot(children.a, this.position.x, this.position.y)
+        let c2 = new Bot(children.b, this.position.x, this.position.y)
         c1.velocity = this.velocity.copy()
         c2.velocity = this.velocity.copy().mult(-1)
         this.destroy()
@@ -105,13 +111,15 @@ class Bot {
         Sim.population.push(c2)
     }
     destroy() {
-        if (this.bounds.draw) {
-            viewport.removeChild(this.bounds.graphic)
+        if (this.bounds) {
+            if (this.bounds.draw) {
+                viewport.removeChild(this.bounds.graphic)
+            }
         }
         viewport.removeChild(this.graphic)
-        for (let i = 0; i < population.length; i++) {
-            if (population[i] == this) {
-                population.splice(i, 1)
+        for (let i = 0; i < Sim.population.length; i++) {
+            if (Sim.population[i] == this) {
+                Sim.population.splice(i, 1)
             }
         }
     }
@@ -136,8 +144,8 @@ class Bot {
         this.velocity.limit(this.maxSpeed)
         this.position.add(this.velocity)
 
-        // this.bounds.position.set(this.position.x, this.position.y)
-        // this.bounds.rotate(rot)
+        this.bounds.position.set(this.position.x, this.position.y)
+        this.bounds.rotate(rot)
         // if (this.bounds.graphic) {
         //     this.bounds.graphic.position.set(this.position.x, this.position.y)
         //     this.bounds.graphic.rotation = rot
