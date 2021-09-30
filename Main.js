@@ -2,12 +2,15 @@ document.body.appendChild(view);
 
 stage.addChild(viewport)
 
-viewport
-    .drag()
-    .wheel()
+// viewport
+//     .drag()
+//     .wheel()
 
 //Global Simulation Object for storing all global Variables and Functions
 const Sim = {};
+
+Sim.isRunning = false
+Sim.runTime = 0
 
 Sim.psize = 25;
 Sim.population = []
@@ -15,8 +18,28 @@ Sim.population = []
 Sim.foodRate = 10;
 Sim.food = []
 
-Sim.world_size = new Box(new Vector2(), renderer.width, renderer.height, true)
+Sim.world_size = new Box(new Vector2(), renderer.width, renderer.height)
 Sim.TREE = new QuadTree(Sim.world_size, 3, 10, 0)
+
+Sim.labels = []
+Sim.data = {
+    labels: Sim.labels,
+    datasets:[{
+        label: 'Average Fitness',
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgb(255, 99, 132)',
+        data: [],
+    }]
+}
+Sim.config = {
+    type: 'line',
+    data: Sim.data
+}
+
+Sim.graph = new Chart(
+    document.getElementById('chart').getContext('2d'),
+    Sim.config
+)
 
 Sim.newpopulation = () => {
     let new_pop = []
@@ -27,6 +50,7 @@ Sim.newpopulation = () => {
 }
 
 Sim.avgFitnessCalc = () => {
+    if(!Sim.isRunning) return
     let avg = 0
     for (let bot of Sim.population) {
         avg += bot.DNA.getFitness()
@@ -35,8 +59,15 @@ Sim.avgFitnessCalc = () => {
     console.log(avg)
 
     for (let i = 0; i < Sim.foodRate; i++) {
+        if(Sim.food.length >= 1000) break
         Sim.food.push(new Food(new Vector2(rand_int(0, renderer.width), rand_int(0, renderer.height))))
     }
+
+    Sim.runTime++
+
+    Sim.graph.data.labels.push(Sim.runTime)
+    Sim.graph.data.datasets[0].data.push(avg)
+    Sim.graph.update()
 }
 
 function sigmoid(x) {
@@ -52,8 +83,9 @@ var randomProperty = function (obj) {
     return obj[keys[keys.length * Math.random() << 0]];
 };
 
-ticker.stop()
+//ticker.stop()
 ticker.add(() => {
+    if(!Sim.isRunning) return
     Sim.TREE.clear()
 
     for (let bot of Sim.population) {
@@ -63,18 +95,11 @@ ticker.add(() => {
     for (let object of Sim.food) {
         Sim.TREE.append(object)
     }
-    // if (Sim.food.length < Sim.maxFood) {
-    //     let dif = Sim.maxFood - Sim.food.length
-    //     for (let i = 0; i < dif; i++) {
-    //         Sim.food.push(new Food(new Vector2(rand_int(0, renderer.width), rand_int(0, renderer.height))))
-    //     }
-    // }
-    //let avgFitness = 0;
     for (let bot of Sim.population) {
-        let range = new Box(bot.position.copy().sub(120, 120), 240, 240)
+        let range = new Box(bot.position.copy().sub(bot.viewrange/2, bot.viewrange/2), bot.viewrange, bot.viewrange)
         let others = Sim.TREE.query(range)
         if (others.length <= 0) {
-            //bot.applyForce(bot.wonder())
+            bot.applyForce(bot.wonder())
             continue
         }
         let closestFood
@@ -101,11 +126,31 @@ ticker.add(() => {
 })
 
 Sim.start = () => {
-
+    
     //let spawns = setup_map()
-    Sim.population = Sim.newpopulation()
+    Sim.psize = document.getElementById("populationInput").value
+    Sim.foodRate = document.getElementById("foodInput").value
+    if(Sim.population.length <= 0) {
+        Sim.population = Sim.newpopulation()
+    }
+    
     console.log("Game Start")
-    ticker.start()
+    Sim.isRunning = true
+    if(!Sim.foodInterval) {
+        Sim.foodInterval = setInterval(Sim.avgFitnessCalc, 1000)
+    }
+}
 
-    setInterval(Sim.avgFitnessCalc, 1000)
+Sim.pause = () => {
+    Sim.isRunning = false
+}
+
+Sim.end = () => {
+    for(let i = Sim.population.length -1; i >= 0; i--) {
+        Sim.population[i].destroy();
+    }
+    for(let i = Sim.food.length - 1; i >= 0; i--) {
+        Sim.food[i].delete()
+    }
+    Sim.isRunning = false
 }

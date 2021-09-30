@@ -54,13 +54,13 @@ class Bot {
         this.maxForce = this.DNA.genes[1]
         this.viewrange = this.DNA.genes[2]
 
-        this.bounds = new Polygon(this.position.copy(), [new Vector2(0, 12), new Vector2(24, 0), new Vector2(0, -12)], 12, 12);
+        this.bounds = new Polygon(this.position.copy(), [new Vector2(0, 12), new Vector2(24, 0), new Vector2(0, -12)], 12, 12, true);
     }
     wonder() {
         let dir = this.velocity.copy().normalize()
-        let center = this.position.copy().add(dir.mult(10))
-        let wdelta = rand_int(-5, 5)
-        let offset = new Vector2(Math.cos(wdelta), Math.sin(wdelta))
+        let center = this.position.copy().add(dir.mult(100))
+        let wdelta = Math.random()*(Math.PI*2)
+        let offset = new Vector2(Math.cos(wdelta)*100, Math.sin(wdelta)*100)
         //let rp = this.position.copy().add(this.velocity.copy().add(cp))
         return this.seek(center.add(offset))
     }
@@ -146,10 +146,10 @@ class Bot {
 
         this.bounds.position.set(this.position.x, this.position.y)
         this.bounds.rotate(rot)
-        // if (this.bounds.graphic) {
-        //     this.bounds.graphic.position.set(this.position.x, this.position.y)
-        //     this.bounds.graphic.rotation = rot
-        // }
+        if (this.bounds.graphic) {
+            this.bounds.graphic.position.set(this.position.x, this.position.y)
+            this.bounds.graphic.rotation = rot
+        }
 
 
         this.graphic.position.set(this.position.x, this.position.y)
@@ -163,4 +163,3 @@ class Bot {
         this.acceleration.mult(0)
     }
 }
-
