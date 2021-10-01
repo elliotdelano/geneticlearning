@@ -33,18 +33,19 @@ class Bot {
     viewrange = 0
 
     food = 1000
-    static maxFood = 2000
+    maxFood = 2000
 
-    constructor(DNA, x, y) {
+    constructor(DNA, x, y, color) {
         this.position.set(x, y)
         this.DNA = DNA
+        this.color = color
         this.display()
         this.setup()
     }
 
     display() {
         this.graphic = new PIXI.Graphics()
-        this.graphic.beginFill(0xff0000)
+        this.graphic.beginFill(this.color)
         this.graphic.drawPolygon(new PIXI.Point(0, 12), new PIXI.Point(24, 0), new PIXI.Point(0, -12))
         this.graphic.position.set(this.position.x - this.width / 2, this.position.y - this.height / 2)
         viewport.addChild(this.graphic)
@@ -90,25 +91,12 @@ class Bot {
         this.acceleration.add(force)
     }
     checkState() {
-        if (this.food > Bot.maxFood) {
+        if (this.food > this.maxFood) {
             this.reproduce()
         }
         if (this.food <= 0) {
             this.destroy()
         }
-    }
-    eat() {
-        this.food += 250
-    }
-    reproduce() {
-        let children = DNA.mitosis(this.DNA)
-        let c1 = new Bot(children.a, this.position.x, this.position.y)
-        let c2 = new Bot(children.b, this.position.x, this.position.y)
-        c1.velocity = this.velocity.copy()
-        c2.velocity = this.velocity.copy().mult(-1)
-        this.destroy()
-        Sim.population.push(c1)
-        Sim.population.push(c2)
     }
     destroy() {
         if (this.bounds) {
@@ -161,5 +149,70 @@ class Bot {
         //this.view.graphic.rotation = rot
 
         this.acceleration.mult(0)
+    }
+}
+
+class Prey extends Bot {
+    constructor(DNA, x, y) {
+        super(DNA, x, y, 0x0000ff)
+    }
+    reproduce() {
+        let children = DNA.mitosis(this.DNA)
+        let c1 = new Prey(children.a, this.position.x, this.position.y)
+        let c2 = new Prey(children.b, this.position.x, this.position.y)
+        c1.velocity = this.velocity.copy()
+        c2.velocity = this.velocity.copy().mult(-1)
+        this.destroy()
+        Sim.population.push(c1)
+        Sim.population.push(c2)
+    }
+    interactOther(other) {
+        if(other instanceof Predator) {
+            this.applyForce(this.evade(other))
+        }
+        if(other instanceof Food) {
+            this.applyForce(this.seek(other.position))
+        }
+    }
+    collideWith(other) {
+        if(other instanceof Food) {
+            other.delete()
+            this.eat()
+        }
+    }
+    eat() {
+        this.food += 250
+    }
+}
+
+class Predator extends Bot {
+    constructor(DNA, x, y) {
+        super(DNA, x, y, 0xff0000)
+        this.maxFood = 6000
+        this.food = 2000
+    }
+    reproduce() {
+        let children = DNA.mitosis(this.DNA)
+        let c1 = new Predator(children.a, this.position.x, this.position.y)
+        let c2 = new Predator(children.b, this.position.x, this.position.y)
+        c1.velocity = this.velocity.copy()
+        c2.velocity = this.velocity.copy().mult(-1)
+        this.destroy()
+        Sim.population.push(c1)
+        Sim.population.push(c2)
+    }
+    interactOther(other) {
+        if(other instanceof Prey) {
+            this.applyForce(this.pursue(other))
+        }
+    }
+    collideWith(other) {
+        if(other instanceof Prey) {
+            other.destroy()
+            this.eat()
+        }
+    }
+    eat() {
+        this.food += 1000
     }
 }

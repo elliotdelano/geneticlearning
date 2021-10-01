@@ -1,5 +1,5 @@
 class DNA {
-    static mutationRate = 0.9;
+    static mutationRate = 0.2;
     constructor(genesIn) {
         this.genes = genesIn || [0.5, 0.01, 100]
     }

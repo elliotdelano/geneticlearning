@@ -30,15 +30,22 @@
         <div><button id="pause" type="button" onclick="Sim.pause()">Pause Simulation</button></div>
         <div><button id="end" type="button" onclick="Sim.end()">End Simulation</button></div>
         <div>
-            <div>Initial Population</div>
-            <input id="populationInput" type="text"></input>
+            <div>Initial Prey Population</div>
+            <input id="preyInput" type="text"></input>
+        </div>
+        <div>
+            <div>Initial Predator Population</div>
+            <input id="predatorInput" type="text"></input>
         </div>
         <div>
             <div>Food Per Second</div>
             <input id="foodInput" type="text"></input>
         </div>
         <div>
-            <canvas id="chart" style="width:200px;height:200px;"></canvas>
+            <canvas id="fitnessChart" style="width:200px;height:200px;"></canvas>
+        </div>
+        <div>
+            <canvas id="populationChart" style="width:200px;height:200px;"></canvas>
         </div>
         
     </div>
