@@ -166,15 +166,19 @@ Sim.start = () => {
     Sim.preySize = document.getElementById("preyInput").value
     Sim.predatorSize = document.getElementById("predatorInput").value
     Sim.psize = Sim.preySize + Sim.predatorSize
-    Sim.foodRate = document.getElementById("foodInput").value
+    Sim.foodRate = document.getElementById("foodQuantityInput").value
+    Sim.reproductionQuantity = document.getElementById("reproductionInput").value
+    Sim.lossPerTick = document.getElementById("energyLossInput").value
     if(Sim.population.length <= 0) {
         Sim.population = Sim.newpopulation()
     }
     
     console.log("Game Start")
     Sim.isRunning = true
+    let foodTime = document.getElementById("foodRateInput").value * 1000
+    console.log(foodTime)
     if(!Sim.foodInterval) {
-        Sim.foodInterval = setInterval(Sim.secondTicker, 1000)
+        Sim.foodInterval = setInterval(Sim.secondTicker, foodTime)
     }
     // if(!Sim.graphInterval) {
     //     Sim.graphInterval = setInterval(Sim.avgFitnessCalc, 5000)
@@ -192,5 +196,7 @@ Sim.end = () => {
     for(let i = Sim.food.length - 1; i >= 0; i--) {
         Sim.food[i].delete()
     }
+    clearInterval(Sim.foodInterval)
+    Sim.foodInterval = undefined
     Sim.isRunning = false
 }

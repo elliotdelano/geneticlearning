@@ -91,7 +91,7 @@ class Bot {
         this.acceleration.add(force)
     }
     checkState() {
-        if (this.food > this.maxFood) {
+        if (this.food > Sim.reproductionQuantity) {
             this.reproduce()
         }
         if (this.food <= 0) {
@@ -113,7 +113,7 @@ class Bot {
     }
     update() {
         this.checkState()
-        this.food--
+        this.food-=Sim.lossPerTick
         if (this.position.x > Sim.world_size.width) {
             this.position.x = 0
         }
