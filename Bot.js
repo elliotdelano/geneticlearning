@@ -60,8 +60,8 @@ class Bot {
     wonder() {
         let dir = this.velocity.copy().normalize()
         let center = this.position.copy().add(dir.mult(100))
-        let wdelta = Math.random()*(Math.PI*2)
-        let offset = new Vector2(Math.cos(wdelta)*100, Math.sin(wdelta)*100)
+        let wdelta = Math.random() * (Math.PI * 2)
+        let offset = new Vector2(Math.cos(wdelta) * 100, Math.sin(wdelta) * 100)
         //let rp = this.position.copy().add(this.velocity.copy().add(cp))
         return this.seek(center.add(offset))
     }
@@ -113,7 +113,7 @@ class Bot {
     }
     update() {
         this.checkState()
-        this.food-=Sim.lossPerTick
+        this.food -= Sim.lossPerTick
         if (this.position.x > Sim.world_size.width) {
             this.position.x = 0
         }
@@ -167,15 +167,15 @@ class Prey extends Bot {
         Sim.population.push(c2)
     }
     interactOther(other) {
-        if(other instanceof Predator) {
+        if (other instanceof Predator) {
             this.applyForce(this.evade(other))
         }
-        if(other instanceof Food) {
+        if (other instanceof Food) {
             this.applyForce(this.seek(other.position))
         }
     }
     collideWith(other) {
-        if(other instanceof Food) {
+        if (other instanceof Food) {
             other.delete()
             this.eat()
         }
@@ -202,17 +202,17 @@ class Predator extends Bot {
         Sim.population.push(c2)
     }
     interactOther(other) {
-        if(other instanceof Prey) {
+        if (other instanceof Prey) {
             this.applyForce(this.pursue(other))
         }
     }
     collideWith(other) {
-        if(other instanceof Prey) {
+        if (other instanceof Prey) {
             other.destroy()
             this.eat()
         }
     }
     eat() {
-        this.food += 1000
+        this.food += 250
     }
 }

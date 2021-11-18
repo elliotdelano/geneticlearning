@@ -10,14 +10,16 @@ stage.addChild(viewport)
 const Sim = {};
 
 Sim.isRunning = false
+Sim.endTime = Number.POSITIVE_INFINITY
 Sim.runTime = 0
 
-Sim.psize = 0
-Sim.preySize = 0
+Sim.preySize = 5
 Sim.predatorSize = 0
 Sim.population = []
-
+Sim.reproductionQuantity = 2000
+Sim.lossPerTick = 1
 Sim.foodRate = 10;
+
 Sim.food = []
 
 Sim.world_size = new Box(new Vector2(), renderer.width, renderer.height)
@@ -26,7 +28,7 @@ Sim.TREE = new QuadTree(Sim.world_size, 3, 10, 0)
 Sim.Flabels = []
 Sim.Fdata = {
     labels: Sim.Flabels,
-    datasets:[{
+    datasets: [{
         label: 'Average Fitness',
         backgroundColor: 'rgb(255, 99, 132)',
         borderColor: 'rgb(255, 99, 132)',
@@ -36,7 +38,7 @@ Sim.Fdata = {
 Sim.Plabels = []
 Sim.Pdata = {
     labels: Sim.Flabels,
-    datasets:[{
+    datasets: [{
         label: 'Prey',
         backgroundColor: 'rgb(0, 0, 255)',
         borderColor: 'rgb(0, 0, 255)',
@@ -57,14 +59,14 @@ Sim.Pconfig = {
     data: Sim.Pdata
 }
 
-Sim.fitnessGraph = new Chart(
-    document.getElementById('fitnessChart').getContext('2d'),
-    Sim.Fconfig
-)
-Sim.populationGraph = new Chart(
-    document.getElementById('populationChart').getContext('2d'),
-    Sim.Pconfig
-)
+// Sim.fitnessGraph = new Chart(
+//     document.getElementById('fitnessChart').getContext('2d'),
+//     Sim.Fconfig
+// )
+// Sim.populationGraph = new Chart(
+//     document.getElementById('populationChart').getContext('2d'),
+//     Sim.Pconfig
+// )
 
 Sim.newpopulation = () => {
     let new_pop = []
@@ -78,19 +80,19 @@ Sim.newpopulation = () => {
 }
 
 Sim.secondTicker = () => {
-    if(!Sim.isRunning) return
+    if (!Sim.isRunning) return
     for (let i = 0; i < Sim.foodRate; i++) {
-        if(Sim.food.length >= 1000) break
+        if (Sim.food.length >= 1000) break
         Sim.food.push(new Food(new Vector2(rand_int(0, renderer.width), rand_int(0, renderer.height))))
     }
 
     Sim.runTime++
 
-    if(Sim.runTime % 5 == 0) Sim.avgFitnessCalc()
+    if (Sim.runTime % 5 == 0) Sim.avgFitnessCalc()
 }
 
 Sim.avgFitnessCalc = () => {
-    if(!Sim.isRunning) return
+    if (!Sim.isRunning) return
     let avg = 0
     for (let bot of Sim.population) {
         avg += bot.DNA.getFitness()
@@ -99,22 +101,22 @@ Sim.avgFitnessCalc = () => {
 
     let preyCount = 0
     let predatorCount = 0
-    for(let i = 0; i < Sim.population.length; i++) {
-        if(Sim.population[i] instanceof Prey) {
+    for (let i = 0; i < Sim.population.length; i++) {
+        if (Sim.population[i] instanceof Prey) {
             preyCount++
         } else {
             predatorCount++
         }
     }
 
-    Sim.fitnessGraph.data.labels.push(Sim.runTime)
-    Sim.fitnessGraph.data.datasets[0].data.push(avg)
-    Sim.fitnessGraph.update()
+    // Sim.fitnessGraph.data.labels.push(Sim.runTime)
+    // Sim.fitnessGraph.data.datasets[0].data.push(avg)
+    // Sim.fitnessGraph.update()
 
-    Sim.populationGraph.data.labels.push(Sim.runTime)
-    Sim.populationGraph.data.datasets[0].data.push(preyCount)
-    Sim.populationGraph.data.datasets[1].data.push(predatorCount)
-    Sim.populationGraph.update()
+    // Sim.populationGraph.data.labels.push(Sim.runTime)
+    // Sim.populationGraph.data.datasets[0].data.push(preyCount)
+    // Sim.populationGraph.data.datasets[1].data.push(predatorCount)
+    // Sim.populationGraph.update()
 }
 
 function sigmoid(x) {
@@ -132,7 +134,11 @@ var randomProperty = function (obj) {
 
 //ticker.stop()
 ticker.add(() => {
-    if(!Sim.isRunning) return
+    if (!Sim.isRunning) return
+    if (Date.now() > Sim.endTime) {
+        Sim.pause()
+        return
+    }
     Sim.TREE.clear()
 
     for (let bot of Sim.population) {
@@ -143,7 +149,7 @@ ticker.add(() => {
         Sim.TREE.append(object)
     }
     for (let bot of Sim.population) {
-        let range = new Box(bot.position.copy().sub(bot.viewrange/2, bot.viewrange/2), bot.viewrange, bot.viewrange)
+        let range = new Box(bot.position.copy().sub(bot.viewrange / 2, bot.viewrange / 2), bot.viewrange, bot.viewrange)
         let others = Sim.TREE.query(range)
         if (others.length <= 0) {
             bot.applyForce(bot.wonder())
@@ -161,42 +167,47 @@ ticker.add(() => {
 })
 
 Sim.start = () => {
-    
+    if (Sim.pauseTime) {
+        Sim.endTime += Date.now() - Sim.pauseTime
+        Sim.pauseTime = undefined
+    }
+    if (Date.now() > Sim.endTime) return
     //let spawns = setup_map()
-    Sim.preySize = document.getElementById("preyInput").value
-    Sim.predatorSize = document.getElementById("predatorInput").value
-    Sim.psize = Sim.preySize + Sim.predatorSize
-    Sim.foodRate = document.getElementById("foodQuantityInput").value
-    Sim.reproductionQuantity = document.getElementById("reproductionInput").value
-    Sim.lossPerTick = document.getElementById("energyLossInput").value
-    if(Sim.population.length <= 0) {
+    Sim.preySize = parseInt(document.getElementById("preyInput").value)
+    Sim.predatorSize = parseInt(document.getElementById("predatorInput").value)
+    Sim.foodRate = parseInt(document.getElementById("foodQuantityInput").value)
+    let reproVal = parseInt(document.getElementById("reproductionInput").value)
+    Sim.reproductionQuantity = reproVal < 1500 ? 1500 : reproVal
+    Sim.lossPerTick = parseInt(document.getElementById("energyLossInput").value)
+    Sim.endTime = (parseInt(document.getElementById("durationInput").value) * 60000 + Date.now()) || Number.POSITIVE_INFINITY
+    if (Sim.population.length <= 0) {
         Sim.population = Sim.newpopulation()
     }
-    
+
     console.log("Game Start")
     Sim.isRunning = true
-    let foodTime = document.getElementById("foodRateInput").value * 1000
+    let foodTime = parseInt(document.getElementById("foodRateInput").value) * 1000 || 1000
     console.log(foodTime)
-    if(!Sim.foodInterval) {
+    if (!Sim.foodInterval) {
         Sim.foodInterval = setInterval(Sim.secondTicker, foodTime)
     }
-    // if(!Sim.graphInterval) {
-    //     Sim.graphInterval = setInterval(Sim.avgFitnessCalc, 5000)
-    // }
 }
 
 Sim.pause = () => {
+    Sim.pauseTime = Date.now()
     Sim.isRunning = false
 }
 
 Sim.end = () => {
-    for(let i = Sim.population.length -1; i >= 0; i--) {
+    for (let i = Sim.population.length - 1; i >= 0; i--) {
         Sim.population[i].destroy();
     }
-    for(let i = Sim.food.length - 1; i >= 0; i--) {
+    for (let i = Sim.food.length - 1; i >= 0; i--) {
         Sim.food[i].delete()
     }
     clearInterval(Sim.foodInterval)
     Sim.foodInterval = undefined
+    Sim.endTime = Number.POSITIVE_INFINITY
+    Sim.pauseTime = undefined
     Sim.isRunning = false
 }
