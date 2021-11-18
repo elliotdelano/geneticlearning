@@ -12,6 +12,7 @@ const Sim = {};
 Sim.isRunning = false
 Sim.endTime = Number.POSITIVE_INFINITY
 Sim.runTime = 0
+Sim.frameRate = 60
 
 Sim.preySize = 5
 Sim.predatorSize = 0
@@ -21,6 +22,8 @@ Sim.lossPerTick = 1
 Sim.foodRate = 10;
 
 Sim.food = []
+
+Sim.data = []
 
 Sim.world_size = new Box(new Vector2(), renderer.width, renderer.height)
 Sim.TREE = new QuadTree(Sim.world_size, 3, 10, 0)
@@ -109,6 +112,8 @@ Sim.avgFitnessCalc = () => {
         }
     }
 
+    Sim.data.push([avg, Date.now()-Sim.startTime])
+
     // Sim.fitnessGraph.data.labels.push(Sim.runTime)
     // Sim.fitnessGraph.data.datasets[0].data.push(avg)
     // Sim.fitnessGraph.update()
@@ -133,44 +138,107 @@ var randomProperty = function (obj) {
 };
 
 //ticker.stop()
-ticker.add(() => {
-    if (!Sim.isRunning) return
-    if (Date.now() > Sim.endTime) {
-        Sim.pause()
-        return
-    }
-    Sim.TREE.clear()
+// ticker.add(() => {
+//     if (!Sim.isRunning) return
+//     if (Date.now() > Sim.endTime) {
+//         Sim.pause()
+//         return
+//     }
+//     Sim.TREE.clear()
 
-    for (let bot of Sim.population) {
-        bot.update()
-        Sim.TREE.append(bot)
-    }
-    for (let object of Sim.food) {
-        Sim.TREE.append(object)
-    }
-    for (let bot of Sim.population) {
-        let range = new Box(bot.position.copy().sub(bot.viewrange / 2, bot.viewrange / 2), bot.viewrange, bot.viewrange)
-        let others = Sim.TREE.query(range)
-        if (others.length <= 0) {
-            bot.applyForce(bot.wonder())
-            continue
-        }
-        for (let o of others) {
-            if (bot != o) {
-                bot.interactOther(o)
-                if (testPolygonPolygon(bot.bounds, o.bounds)) {
-                    bot.collideWith(o)
+//     for (let bot of Sim.population) {
+//         bot.update()
+//         Sim.TREE.append(bot)
+//     }
+//     for (let object of Sim.food) {
+//         Sim.TREE.append(object)
+//     }
+//     for (let bot of Sim.population) {
+//         let range = new Box(bot.position.copy().sub(bot.viewrange / 2, bot.viewrange / 2), bot.viewrange, bot.viewrange)
+//         let others = Sim.TREE.query(range)
+//         if (others.length <= 0) {
+//             bot.applyForce(bot.wonder())
+//             continue
+//         }
+//         for (let o of others) {
+//             if (bot != o) {
+//                 bot.interactOther(o)
+//                 if (testPolygonPolygon(bot.bounds, o.bounds)) {
+//                     bot.collideWith(o)
+//                 }
+//             }
+//         }
+//     }
+// })
+
+Sim.beginLoop = function () {
+    Sim.fpsInterval = 1000 / Sim.frameRate;
+    Sim.lastDrawTime = performance.now();
+    //this.lastSampleTime = lastDrawTime;
+    Sim.frameCount = 0;
+
+    Sim.loop();
+},
+Sim.loop = function (now) {
+    Sim.requestID = requestAnimationFrame(Sim.loop);
+
+    let elapsed = now - Sim.lastDrawTime;
+
+    // if enough time has elapsed draw the next frame
+    if (elapsed > Sim.fpsInterval) {
+        Sim.lastDrawTime = now - (elapsed % Sim.fpsInterval);
+        ///////////Do Stuff//////////
+        
+        if(Sim.isRunning) {
+            if (Date.now() > Sim.endTime) {
+                Sim.pause()
+                return
+            }
+            Sim.TREE.clear()
+        
+            for (let bot of Sim.population) {
+                bot.update()
+                Sim.TREE.append(bot)
+            }
+            for (let object of Sim.food) {
+                Sim.TREE.append(object)
+            }
+            for (let bot of Sim.population) {
+                let range = new Box(bot.position.copy().sub(bot.viewrange / 2, bot.viewrange / 2), bot.viewrange, bot.viewrange)
+                let others = Sim.TREE.query(range)
+                if (others.length <= 0) {
+                    bot.applyForce(bot.wonder())
+                    continue
+                }
+                for (let o of others) {
+                    if (bot != o) {
+                        bot.interactOther(o)
+                        if (testPolygonPolygon(bot.bounds, o.bounds)) {
+                            bot.collideWith(o)
+                        }
+                    }
                 }
             }
         }
+
+
+        //////////Stop Stuff/////////
+        Sim.frameCount++;
     }
-})
+},
+Sim.endLoop = function () {
+    cancelAnimationFrame(Sim.requestID)
+}
 
 Sim.start = () => {
+    let current = Date.now()
     if (Sim.pauseTime) {
-        Sim.endTime += Date.now() - Sim.pauseTime
+        let pauseDuration = Date.now() - Sim.pauseTime
+        current -= pauseDuration
+        Sim.endTime += pauseDuration
         Sim.pauseTime = undefined
     }
+    Sim.startTime = current
     if (Date.now() > Sim.endTime) return
     //let spawns = setup_map()
     Sim.preySize = parseInt(document.getElementById("preyInput").value)
@@ -186,6 +254,7 @@ Sim.start = () => {
 
     console.log("Game Start")
     Sim.isRunning = true
+    Sim.beginLoop()
     let foodTime = parseInt(document.getElementById("foodRateInput").value) * 1000 || 1000
     console.log(foodTime)
     if (!Sim.foodInterval) {
@@ -195,6 +264,7 @@ Sim.start = () => {
 
 Sim.pause = () => {
     Sim.pauseTime = Date.now()
+    Sim.endLoop()
     Sim.isRunning = false
 }
 
@@ -206,8 +276,18 @@ Sim.end = () => {
         Sim.food[i].delete()
     }
     clearInterval(Sim.foodInterval)
+    Sim.endLoop()
     Sim.foodInterval = undefined
     Sim.endTime = Number.POSITIVE_INFINITY
     Sim.pauseTime = undefined
     Sim.isRunning = false
+}
+
+Sim.download = () => {
+    let content = "data:text/csv;charset=utf-8,";
+
+    let csv = Sim.data.map(row=>row.join(',')).join('\n')
+
+    content = content + csv
+    window.open(encodeURI(content))
 }
