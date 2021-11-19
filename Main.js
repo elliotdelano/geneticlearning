@@ -112,7 +112,7 @@ Sim.avgFitnessCalc = () => {
         }
     }
 
-    Sim.data.push([avg, Date.now()-Sim.startTime])
+    Sim.data.push([avg, Math.round((Date.now()-Sim.startTime)/1000) * 1000])
 
     // Sim.fitnessGraph.data.labels.push(Sim.runTime)
     // Sim.fitnessGraph.data.datasets[0].data.push(avg)
@@ -136,40 +136,6 @@ var randomProperty = function (obj) {
     var keys = Object.keys(obj);
     return obj[keys[keys.length * Math.random() << 0]];
 };
-
-//ticker.stop()
-// ticker.add(() => {
-//     if (!Sim.isRunning) return
-//     if (Date.now() > Sim.endTime) {
-//         Sim.pause()
-//         return
-//     }
-//     Sim.TREE.clear()
-
-//     for (let bot of Sim.population) {
-//         bot.update()
-//         Sim.TREE.append(bot)
-//     }
-//     for (let object of Sim.food) {
-//         Sim.TREE.append(object)
-//     }
-//     for (let bot of Sim.population) {
-//         let range = new Box(bot.position.copy().sub(bot.viewrange / 2, bot.viewrange / 2), bot.viewrange, bot.viewrange)
-//         let others = Sim.TREE.query(range)
-//         if (others.length <= 0) {
-//             bot.applyForce(bot.wonder())
-//             continue
-//         }
-//         for (let o of others) {
-//             if (bot != o) {
-//                 bot.interactOther(o)
-//                 if (testPolygonPolygon(bot.bounds, o.bounds)) {
-//                     bot.collideWith(o)
-//                 }
-//             }
-//         }
-//     }
-// })
 
 Sim.beginLoop = function () {
     Sim.fpsInterval = 1000 / Sim.frameRate;
@@ -212,7 +178,7 @@ Sim.loop = function (now) {
                 }
                 for (let o of others) {
                     if (bot != o) {
-                        bot.interactOther(o)
+                        bot.addTarget(o)
                         if (testPolygonPolygon(bot.bounds, o.bounds)) {
                             bot.collideWith(o)
                         }

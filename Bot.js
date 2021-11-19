@@ -35,6 +35,9 @@ class Bot {
     food = 1000
     maxFood = 2000
 
+    others = []
+    target = undefined
+
     constructor(DNA, x, y, color) {
         this.position.set(x, y)
         this.DNA = DNA
@@ -111,7 +114,34 @@ class Bot {
             }
         }
     }
+    getTarget() {
+        let dist = Number.MAX_VALUE
+        let best = undefined
+        for(let o of this.others) {
+            let distance = o.position.dist(this.position)
+            if(distance < dist) {
+                dist = distance
+                best = o
+            }
+        }
+        this.target = best
+    }
+    seekTarget() {
+        if(this.target) {
+            this.interactOther(this.target)
+        } else {
+            this.wonder()
+        }
+    }
+    addTarget(target) {
+        this.others.push(target)
+    }
     update() {
+
+        this.getTarget()
+        this.seekTarget()
+        this.others = []
+
         this.checkState()
         this.food -= Sim.lossPerTick
         if (this.position.x > Sim.world_size.width) {
