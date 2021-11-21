@@ -23,7 +23,7 @@ class DNA {
         return genesOut
     }
     getFitness() {
-        return sigmoid(this.genes[0]) + sigmoid(this.genes[1]) + sigmoid(this.genes[2]-100)
+        return sigmoid(this.genes[0] / 0.5) + sigmoid(this.genes[1] / 0.01) + sigmoid(this.genes[2] / 100)
         //return this.genes[0] + this.genes[1] + this.genes[2]
     }
 }

@@ -91,7 +91,7 @@ Sim.secondTicker = () => {
 
     Sim.runTime++
 
-    if (Sim.runTime % 5 == 0) Sim.avgFitnessCalc()
+    if (Sim.runTime % 30 == 0) Sim.avgFitnessCalc()
 }
 
 Sim.avgFitnessCalc = () => {
@@ -112,7 +112,7 @@ Sim.avgFitnessCalc = () => {
         }
     }
 
-    Sim.data.push([avg, Math.round((Date.now()-Sim.startTime)/1000) * 1000])
+    Sim.data.push([avg, Math.round((Date.now() - Sim.startTime) / 1000) * 1000])
 
     // Sim.fitnessGraph.data.labels.push(Sim.runTime)
     // Sim.fitnessGraph.data.datasets[0].data.push(avg)
@@ -145,56 +145,56 @@ Sim.beginLoop = function () {
 
     Sim.loop();
 },
-Sim.loop = function (now) {
-    Sim.requestID = requestAnimationFrame(Sim.loop);
+    Sim.loop = function (now) {
+        Sim.requestID = requestAnimationFrame(Sim.loop);
 
-    let elapsed = now - Sim.lastDrawTime;
+        let elapsed = now - Sim.lastDrawTime;
 
-    // if enough time has elapsed draw the next frame
-    if (elapsed > Sim.fpsInterval) {
-        Sim.lastDrawTime = now - (elapsed % Sim.fpsInterval);
-        ///////////Do Stuff//////////
-        
-        if(Sim.isRunning) {
-            if (Date.now() > Sim.endTime) {
-                Sim.pause()
-                return
-            }
-            Sim.TREE.clear()
-        
-            for (let bot of Sim.population) {
-                bot.update()
-                Sim.TREE.append(bot)
-            }
-            for (let object of Sim.food) {
-                Sim.TREE.append(object)
-            }
-            for (let bot of Sim.population) {
-                let range = new Box(bot.position.copy().sub(bot.viewrange / 2, bot.viewrange / 2), bot.viewrange, bot.viewrange)
-                let others = Sim.TREE.query(range)
-                if (others.length <= 0) {
-                    bot.applyForce(bot.wonder())
-                    continue
+        // if enough time has elapsed draw the next frame
+        if (elapsed > Sim.fpsInterval) {
+            Sim.lastDrawTime = now - (elapsed % Sim.fpsInterval);
+            ///////////Do Stuff//////////
+
+            if (Sim.isRunning) {
+                if (Date.now() > Sim.endTime) {
+                    Sim.pause()
+                    return
                 }
-                for (let o of others) {
-                    if (bot != o) {
-                        bot.addTarget(o)
-                        if (testPolygonPolygon(bot.bounds, o.bounds)) {
-                            bot.collideWith(o)
+                Sim.TREE.clear()
+
+                for (let bot of Sim.population) {
+                    bot.update()
+                    Sim.TREE.append(bot)
+                }
+                for (let object of Sim.food) {
+                    Sim.TREE.append(object)
+                }
+                for (let bot of Sim.population) {
+                    let range = new Box(bot.position.copy().sub(bot.viewrange / 2, bot.viewrange / 2), bot.viewrange, bot.viewrange)
+                    let others = Sim.TREE.query(range)
+                    if (others.length <= 0) {
+                        bot.applyForce(bot.wonder())
+                        continue
+                    }
+                    for (let o of others) {
+                        if (bot != o) {
+                            bot.addTarget(o)
+                            if (testPolygonPolygon(bot.bounds, o.bounds)) {
+                                bot.collideWith(o)
+                            }
                         }
                     }
                 }
             }
+
+
+            //////////Stop Stuff/////////
+            Sim.frameCount++;
         }
-
-
-        //////////Stop Stuff/////////
-        Sim.frameCount++;
+    },
+    Sim.endLoop = function () {
+        cancelAnimationFrame(Sim.requestID)
     }
-},
-Sim.endLoop = function () {
-    cancelAnimationFrame(Sim.requestID)
-}
 
 Sim.start = () => {
     let current = Date.now()
@@ -252,7 +252,7 @@ Sim.end = () => {
 Sim.download = () => {
     let content = "data:text/csv;charset=utf-8,";
 
-    let csv = Sim.data.map(row=>row.join(',')).join('\n')
+    let csv = Sim.data.map(row => row.join(',')).join('\n')
 
     content = content + csv
     window.open(encodeURI(content))
